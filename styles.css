@@ -120,7 +120,8 @@ textarea.field{resize:vertical;min-height:76px;line-height:1.45}
 .ans.dimmed .badge,.ans.dimmed .txt{color:#7A736A}
 .ans.on{border-color:var(--ink)}
 .ans.on .badge{background:var(--ink);color:#fff}
-.srcchip{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:8px;background:rgba(34,31,26,.045)}
+.srcchip{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:8px;background:rgba(34,31,26,.045);max-width:100%}
+.srcname{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .verdict{font:500 10.5px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase}
 .fade{animation:fadeUp .28s ease both}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}

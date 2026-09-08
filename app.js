@@ -39,8 +39,11 @@ function normalize(raw) {
   const pids = new Set(s.projects.map(p => p.id));
   s.cards = (Array.isArray(raw.cards) ? raw.cards : []).map(c => {
     if (!c || typeof c !== 'object' || !pids.has(c.pid)) return null;
+    const src = str(c.src, 80);
+    // schede vecchie: la fonte si ricava dall'etichetta "File · p. 4"
+    const deck = str(c.deck, 80) || (src.includes(' · ') ? src.split(' · ')[0].trim() : '');
     const base = { id: str(c.id, 32) || uid(), pid: c.pid, box: clamp(num(c.box), 0, INTERVALS.length - 1), due: num(c.due),
-      seen: num(c.seen), lapses: num(c.lapses), created: num(c.created, Date.now()), src: str(c.src, 80) };
+      seen: num(c.seen), lapses: num(c.lapses), created: num(c.created, Date.now()), src, deck };
     if (c.type === 'term') {
       if (!str(c.front) || !str(c.back)) return null;
       return Object.assign(base, { type: 'term', front: str(c.front), back: str(c.back), example: str(c.example) });
@@ -85,6 +88,26 @@ const proj = (id) => S.projects.find(p => p.id === id);
 const cardsOf = (id) => S.cards.filter(c => c.pid === id);
 const dueOf = (id) => cardsOf(id).filter(c => c.due <= Date.now());
 const allDue = () => S.cards.filter(c => c.due <= Date.now());
+const NOFONTE = '__nofonte';                       // le schede senza fonte (JSON incollati vecchi)
+const deckArg = (d) => d || NOFONTE;
+const deckVal = (a) => (a === NOFONTE ? '' : a);
+const deckName = (d) => d || 'Senza fonte';
+const pageOf = (c) => {
+  const s = c.src || '';
+  const tail = s.includes(' · ') ? s.slice(s.lastIndexOf(' · ') + 3).trim() : s.trim();
+  return tail && tail !== (c.deck || '') ? tail : '';
+};
+/* Le fonti di un progetto, con quante schede e quante in scadenza. */
+function decksOf(pid) {
+  const out = [];
+  cardsOf(pid).forEach(c => {
+    let g = out.find(x => x.deck === (c.deck || ''));
+    if (!g) { g = { deck: c.deck || '', n: 0, due: 0, mc: 0 }; out.push(g); }
+    g.n++; if (c.due <= Date.now()) g.due++; if (c.type === 'mc') g.mc++;
+  });
+  return out.sort((a, b) => b.n - a.n);
+}
+const inDecks = (c, sel) => !sel || !sel.length || sel.includes(c.deck || '');
 const mastered = (list) => list.length ? Math.round(list.filter(c => c.box >= 3).length / list.length * 100) : 0;
 const shuffle = (a) => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
 
@@ -218,8 +241,14 @@ function vLibrary() {
 
 function vProject() {
   const p = proj(V.pid); if (!p) { V = { name: 'library' }; return vLibrary(); }
-  const list = cardsOf(p.id), due = dueOf(p.id).length;
+  const decks = decksOf(p.id);
+  const sel = (V.sel || []).filter(d => decks.some(x => x.deck === d));
+  const list = cardsOf(p.id).filter(c => inDecks(c, sel));
+  const due = list.filter(c => c.due <= Date.now()).length;
   const peek = list.slice(0, 4);
+  const scope = sel.length
+    ? (sel.length === 1 ? deckName(sel[0]) : sel.length + ' fonti')
+    : (decks.length > 1 ? 'tutte le fonti' : '');
   return `<div class="screen"><div class="scroll">
     <div class="wrap">
       <button class="back" data-act="nav" data-arg="library"><span style="font-size:15px">&#8249;</span> Libreria</button>
@@ -238,7 +267,30 @@ function vProject() {
         <div class="stat"><b>${list.length}</b><span>${p.type === 'term' ? 'termini' : 'schede'}</span></div>
         <div class="stat"><b style="color:var(--green)">${mastered(list)}%</b><span>imparate</span></div>
       </div>
-      <div class="lbl mt30">Inizia una sessione</div>
+      ${sel.length ? `<p class="meta mt10">Numeri e sessioni riferiti a: ${esc(sel.map(deckName).join(' + '))}</p>` : ''}
+      ${decks.length ? `
+      <div class="between mt30">
+        <div class="lbl">Fonti</div>
+        <div class="meta">${decks.length === 1 ? '1 PDF' : decks.length + ' PDF'}</div>
+      </div>
+      <p class="meta mt10">Tocca una fonte per studiare solo quella. Selezionane due o più e puoi unirle, se per te sono lo stesso argomento.</p>
+      <div class="list mt10">
+        ${decks.map(g => {
+          const on = sel.includes(g.deck);
+          return `<button class="list-row" data-act="seldeck" data-arg="${esc(deckArg(g.deck))}">
+            <span style="width:22px;height:22px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;font:500 11px/1 var(--sans);${on ? 'background:var(--ink);color:var(--card)' : 'border:1.5px solid rgba(34,31,26,.22)'}">${on ? '&#10003;' : ''}</span>
+            <span style="flex:1;min-width:0">
+              <span class="h2" style="font-size:15px;display:block">${esc(deckName(g.deck))}</span>
+              <span class="meta" style="display:block;margin-top:5px">${g.n} ${g.n === 1 ? 'scheda' : 'schede'}${g.due ? ' · ' + g.due + ' da rivedere' : ''}</span>
+            </span>
+          </button>`;
+        }).join('')}
+      </div>
+      ${sel.length ? `<div class="row gap8 mt10" style="flex-wrap:wrap">
+        <button class="btn-sm" data-act="seldeck" data-arg="">Tutte</button>
+        ${sel.length > 1 ? `<button class="btn-sm" data-act="mergedecks">Unisci le ${sel.length} selezionate</button>` : `<button class="btn-sm" data-act="renamedeck" data-arg="${esc(deckArg(sel[0]))}">Rinomina</button>`}
+      </div>` : ''}` : ''}
+      <div class="between mt30"><div class="lbl">Inizia una sessione</div>${scope ? `<div class="meta">${esc(scope)}</div>` : ''}</div>
       <div class="col gap10 mt10">
         <button class="list-row" style="border-radius:18px;background:var(--card);border:1px solid var(--hair)" data-act="learn" data-arg="${esc(p.id)}" ${list.length ? '' : 'disabled'}>
           <span class="tile">${ICON.book}</span>
@@ -275,7 +327,7 @@ function vProject() {
               <span class="h2" style="font-size:14.5px;display:block">${esc(c.q || c.front)}</span>
               <span class="meta" style="color:var(--green);display:block;margin-top:6px">${esc(c.type === 'term' ? c.back : c.options[c.answer])}</span>
             </span>
-            ${c.src ? `<span class="meta" style="flex:none">${esc(c.src)}</span>` : ''}
+            ${pageOf(c) ? `<span class="meta" style="flex:none">${esc(pageOf(c))}</span>` : ''}
           </div></div>`).join('')}
       </div>
       ${list.length > 4 ? `<p class="meta mt10">+ altre ${list.length - 4}</p>` : ''}
@@ -309,8 +361,8 @@ function vQuiz() {
     </div>
     <div class="wrap mt30">
       <div class="lbl" style="color:var(--terra)">${esc(p ? p.title : 'Quiz')}</div>
+      ${card.deck || card.src ? `<div class="srcchip mt10"><span class="tile" style="width:20px;height:20px;border-radius:5px;flex:none">${ICON.book}</span><span class="meta srcname">${esc(card.deck ? deckName(card.deck) : (pageOf(card) || card.src))}</span>${card.deck && pageOf(card) ? `<span class="meta" style="flex:none">${esc(pageOf(card))}</span>` : ''}</div>` : ''}
       <h2 class="q mt14">${esc(card.q)}</h2>
-      ${card.src ? `<div class="srcchip mt14"><i style="width:11px;height:14px;border-radius:2px;border:1px solid rgba(34,31,26,.25);display:block"></i><span class="meta">${esc(card.src)}</span></div>` : ''}
       <div class="col gap10 mt24">
         ${ord.map((real, slot) => {
           let cls = '';
@@ -345,7 +397,7 @@ function vLearn() {
       <div class="swipecard" id="sc">
         <span class="stampL" id="stampL">Ancora</span><span class="stampR" id="stampR">Lo so</span>
         <div class="between">
-          <span class="meta">${esc(card.src || (card.type === 'term' ? 'termine' : 'scheda'))}</span>
+          <span class="meta srcname" style="max-width:60%">${esc(card.deck ? deckName(card.deck) : (card.src || (card.type === 'term' ? 'termine' : 'scheda')))}${card.deck && pageOf(card) ? ' · ' + esc(pageOf(card)) : ''}</span>
           <span class="meta" style="color:#7A736A">tocca per girare</span>
         </div>
         <div class="col" style="flex:1;justify-content:center;gap:16px;padding:18px 0">
@@ -396,6 +448,7 @@ function vResults() {
 
 function vImport() {
   if (!I) I = { step: 'pick', count: 20, type: 'mc', summary: true, files: [], focusMode: 'auto', focus: '', pid: S.projects[0] ? S.projects[0].id : '' };
+  if (!I.deck) I.deck = '';
   const body = {
     pick: () => `
       <div class="wrap">
@@ -488,6 +541,10 @@ function vImport() {
         <button class="btn ghost" data-act="copyprompt">Copia il prompt da usare nella chat</button>
         <textarea class="field mt14" id="jsontext" rows="8" placeholder='[{"q":"…","options":["a","b","c","d"],"answer":0,"why":"…","src":"p. 4"}]'></textarea>
         <div class="card mt14">
+          <div class="meta">Fonte di queste schede</div>
+          <input class="field mt10" id="deckin" placeholder="es. Dispensa 3 — statistica" value="">
+          <p class="meta mt10">Il nome del PDF o dello studio da cui vengono: comparirà su ogni domanda e ti permette di fare quiz solo su questa fonte.</p>
+          <div class="hair" style="margin:18px -18px"></div>
           <div class="meta">Aggiungi al progetto</div>
           <select class="field mt10" id="pidsel">
             ${S.projects.map(p => `<option value="${esc(p.id)}" ${I.pid === p.id ? 'selected' : ''}>${esc(p.title)}</option>`).join('')}
@@ -538,6 +595,7 @@ function vImport() {
             </div>`}
         </div>`).join('')}
       </div>
+      ${I.drafts.some(d => d.deck) ? `<div class="wrap mt18"><p class="meta">Fonte: ${esc([...new Set(I.drafts.map(d => d.deck).filter(Boolean))].join(' · '))}</p></div>` : ''}
       ${(I.notes || []).length ? `<div class="wrap mt24"><div class="card">
         <div class="lbl">Sintesi pronta</div>
         <p class="sub" style="margin:9px 0 0">${I.notes.map(x => esc(x.file)).join(' · ')} — la salvo col resto e la trovi nel progetto, da leggere fuori dalle sessioni.</p>
@@ -735,7 +793,7 @@ function parseJson(raw) {
 }
 
 /* Da array JSON (modello o incollato) a bozze validate. Scarta tutto ciò che non è a norma. */
-function toDrafts(arr, type, fallbackSrc) {
+function toDrafts(arr, type, fallbackSrc, deck) {
   const out = [];
   (Array.isArray(arr) ? arr : []).forEach(d => {
     if (!d || typeof d !== 'object') return;
@@ -743,14 +801,14 @@ function toDrafts(arr, type, fallbackSrc) {
     const src = str(d.src, 80) || fallbackSrc;
     if (type === 'term') {
       if (!str(d.front) || !str(d.back)) return;
-      out.push({ type: 'term', front: str(d.front), back: str(d.back), example: str(d.example), src, flagged: conf < 0.7, keep: true });
+      out.push({ type: 'term', front: str(d.front), back: str(d.back), example: str(d.example), src, deck: deck || '', flagged: conf < 0.7, keep: true });
     } else {
       if (!str(d.q) || !Array.isArray(d.options) || d.options.length !== 4) return;
       // i modelli tendono a mettere la risposta giusta per prima: rimescolo qui, una volta per tutte
       const opts = d.options.map(o => str(o, 500));
       const right = clamp(num(d.answer), 0, 3);
       const ord = shuffle([0, 1, 2, 3]);
-      out.push({ type: 'mc', q: str(d.q), options: ord.map(i => opts[i]), answer: ord.indexOf(right), why: str(d.why), src, flagged: conf < 0.7, keep: true });
+      out.push({ type: 'mc', q: str(d.q), options: ord.map(i => opts[i]), answer: ord.indexOf(right), why: str(d.why), src, deck: deck || '', flagged: conf < 0.7, keep: true });
     }
   });
   return out;
@@ -786,7 +844,7 @@ async function generate() {
       const want = Math.min(per, I.count - drafts.length);
       const out = await callModel(buildPrompt(c.text, want, I.type, srcLabel(c), I.focus, (asked[ci] || []).slice(-14)), me.ctrl.signal);
       if (I !== me) return;                          // annullato nel frattempo
-      toDrafts(parseJson(out), I.type, srcLabel(c)).forEach(d => {
+      toDrafts(parseJson(out), I.type, srcLabel(c), c.file).forEach(d => {
         const head = d.type === 'term' ? d.front : d.q;
         const key = head.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
         if (!key || seen.has(key) || drafts.length >= I.count) return;
@@ -824,13 +882,16 @@ async function generate() {
 }
 
 /* ── azioni ────────────────────────────────────────── */
-function startSession(pid, mode, onlyDue) {
+function startSession(pid, mode, onlyDue, sel) {
   let pool = pid ? cardsOf(pid) : S.cards;
+  if (pid && sel && sel.length) pool = pool.filter(c => inDecks(c, sel));
   if (onlyDue) { const d = pool.filter(c => c.due <= Date.now()); if (d.length) pool = d; }
   if (mode === 'quiz') pool = pool.filter(c => c.type === 'mc');
-  if (!pool.length) return toast(mode === 'quiz' ? 'Nessuna scheda a scelta multipla qui' : 'Nessuna scheda in questo progetto');
+  if (!pool.length) return toast(sel && sel.length
+    ? (mode === 'quiz' ? 'Nessuna domanda a scelta multipla in questa fonte' : 'Nessuna scheda in questa fonte')
+    : (mode === 'quiz' ? 'Nessuna scheda a scelta multipla qui' : 'Nessuna scheda in questo progetto'));
   const size = clamp(num(S.session, 20), 5, 100);
-  Q = { ids: shuffle(pool).slice(0, size).map(c => c.id), i: 0, picked: null, log: [], flipped: false, ord: {}, start: Date.now(), pid, mode };
+  Q = { ids: shuffle(pool).slice(0, size).map(c => c.id), i: 0, picked: null, log: [], flipped: false, ord: {}, start: Date.now(), pid, mode, sel: sel || [] };
   V = { name: mode === 'quiz' ? 'quiz' : 'learn' }; render();
 }
 
@@ -843,11 +904,11 @@ function advance() {
 const acts = {
   nav: (a) => { V = { name: a, tag: V.tag }; if (a === 'import' && (!I || I.step === 'review')) I = null; render(); },
   tag: (a) => { V = { name: 'library', tag: a || null }; render(); },
-  open: (a) => { V = { name: 'project', pid: a }; render(); },
-  quiz: (a) => startSession(a, 'quiz', true),
-  learn: (a) => startSession(a, 'learn', false),
+  open: (a) => { V = { name: 'project', pid: a, sel: [] }; render(); },
+  quiz: (a) => startSession(a, 'quiz', true, V.sel),
+  learn: (a) => startSession(a, 'learn', false, V.sel),
   quizdue: () => startSession(null, 'quiz', true),
-  endsession: () => { V = { name: Q && Q.pid ? 'project' : 'library', pid: Q && Q.pid }; render(); },
+  endsession: () => { V = { name: Q && Q.pid ? 'project' : 'library', pid: Q && Q.pid, sel: Q ? Q.sel : [] }; render(); },
   redo: () => {
     const ids = Q.log.filter(x => !x.ok).map(x => x.id);
     Q = { ids, i: 0, picked: null, log: [], flipped: false, start: Date.now(), pid: Q.pid, mode: 'learn' };
@@ -884,6 +945,30 @@ const acts = {
     save(); V = { name: 'library' }; render();
   },
   seed: () => { seed(); render(); },
+  seldeck: (a) => {
+    if (!a) { V.sel = []; return render(); }
+    const d = deckVal(a), cur = V.sel || [];
+    V.sel = cur.includes(d) ? cur.filter(x => x !== d) : cur.concat([d]);
+    render();
+  },
+  renamedeck: (a) => {
+    const old = deckVal(a);
+    const nu = ask('Nome della fonte', 'es. Dispensa di statistica', deckName(old));
+    if (nu === null) return;
+    const name = nu.trim().slice(0, 80);
+    cardsOf(V.pid).filter(c => (c.deck || '') === old).forEach(c => { c.deck = name; });
+    V.sel = [name]; save(); render();
+  },
+  mergedecks: () => {
+    const sel = V.sel || []; if (sel.length < 2) return;
+    const nu = ask('Nome unico per queste fonti', 'es. Statistica — dispense', deckName(sel[0]));
+    if (nu === null) return;
+    const name = nu.trim().slice(0, 80);
+    const cards = cardsOf(V.pid).filter(c => sel.includes(c.deck || ''));
+    cards.forEach(c => { c.deck = name; });
+    V.sel = [name]; save();
+    toast(`${cards.length} schede ora sotto "${deckName(name)}"`); render();
+  },
 
   settype: (a) => { I.type = a; render(); },
   setsummary: (a) => { I.summary = a === '1'; render(); },
@@ -934,7 +1019,8 @@ const acts = {
     let arr;
     try { arr = parseJson(raw); } catch (e) { I.err = 'Non è JSON valido. Controlla di aver copiato tutto, parentesi quadre incluse.'; return render(); }
     const type = arr[0] && (arr[0].front || arr[0].back) ? 'term' : 'mc';
-    const drafts = toDrafts(arr, type, 'incollato');
+    const deck = ((document.getElementById('deckin') || {}).value || '').trim().slice(0, 80);
+    const drafts = toDrafts(arr, type, deck || 'incollato', deck);
     if (!drafts.length) { I.err = `Ho letto ${arr.length} elementi ma nessuno era una scheda valida: servono q + options (4) + answer, oppure front + back.`; return render(); }
     if (!ensureProject()) return render();
     I.type = type; I.drafts = drafts; I.step = 'review';
@@ -958,11 +1044,12 @@ const acts = {
     const now = Date.now();
     I.drafts.filter(d => d.keep !== false).forEach((d, k) => {
       S.cards.push(Object.assign({ id: uid(), pid: p.id, box: 0, due: now + k * 1000, seen: 0, lapses: 0, created: now },
+        { deck: d.deck || '' },
         d.type === 'term' ? { type: 'term', front: d.front, back: d.back, example: d.example, src: d.src }
                           : { type: 'mc', q: d.q, options: d.options, answer: d.answer, why: d.why, src: d.src }));
     });
     (I.notes || []).forEach(nt => S.notes.push({ id: uid(), pid: p.id, file: nt.file, text: nt.text, created: now }));
-    save(); toast(`Salvate in ${p.title}`); I = null; V = { name: 'project', pid: p.id }; render();
+    save(); toast(`Salvate in ${p.title}`); I = null; V = { name: 'project', pid: p.id, sel: [] }; render();
   },
 
   savekey: () => {
@@ -1032,18 +1119,18 @@ function seed() {
   const eng = { id: uid(), title: 'Inglese accademico', tags: ['Lingue nuove'], color: COLORS[1], type: 'term', created: now };
   S.projects.push(neuro, eng);
   const mc = [
-    ['Quale struttura smista quasi tutti gli input sensoriali verso la corteccia?', ['Talamo', 'Ipotalamo', 'Ponte', 'Cervelletto'], 0, 'Ogni modalità sensoriale tranne l\'olfatto fa sinapsi in un nucleo talamico prima di arrivare alla corteccia.', 'p. 341'],
-    ['La barriera emato-encefalica è mantenuta soprattutto da…', ['Giunzioni serrate endoteliali e piedi astrocitari', 'Guaine degli oligodendrociti', 'Processi della microglia', 'Ciglia ependimali'], 0, 'Sono le tight junction fra cellule endoteliali a sigillare il vaso; gli astrociti le inducono e le mantengono.', 'p. 88'],
-    ['Una lesione dell\'area di Broca produce tipicamente…', ['Eloquio fluente con comprensione scarsa', 'Eloquio non fluente e faticoso', 'Perdita del riconoscimento del parlato', 'Sola incapacità di leggere ad alta voce'], 1, 'L\'afasia di Broca è espressiva: la produzione è stentata e agrammatica, la comprensione resta in gran parte intatta.', 'p. 502'],
-    ['La substantia nigra proietta principalmente allo…', ['Nucleo rosso', 'Oliva inferiore', 'Striato', 'Genicolato laterale'], 2, 'La via nigrostriatale è dopaminergica: la sua perdita produce i segni motori della malattia di Parkinson.', 'p. 412'],
+    ['Quale struttura smista quasi tutti gli input sensoriali verso la corteccia?', ['Talamo', 'Ipotalamo', 'Ponte', 'Cervelletto'], 0, 'Ogni modalità sensoriale tranne l\'olfatto fa sinapsi in un nucleo talamico prima di arrivare alla corteccia.', 'p. 341', 'Kandel — cap. 12'],
+    ['La barriera emato-encefalica è mantenuta soprattutto da…', ['Giunzioni serrate endoteliali e piedi astrocitari', 'Guaine degli oligodendrociti', 'Processi della microglia', 'Ciglia ependimali'], 0, 'Sono le tight junction fra cellule endoteliali a sigillare il vaso; gli astrociti le inducono e le mantengono.', 'p. 88', 'Kandel — cap. 12'],
+    ['Una lesione dell\'area di Broca produce tipicamente…', ['Eloquio fluente con comprensione scarsa', 'Eloquio non fluente e faticoso', 'Perdita del riconoscimento del parlato', 'Sola incapacità di leggere ad alta voce'], 1, 'L\'afasia di Broca è espressiva: la produzione è stentata e agrammatica, la comprensione resta in gran parte intatta.', 'p. 502', 'Lezione 07 — slide'],
+    ['La substantia nigra proietta principalmente allo…', ['Nucleo rosso', 'Oliva inferiore', 'Striato', 'Genicolato laterale'], 2, 'La via nigrostriatale è dopaminergica: la sua perdita produce i segni motori della malattia di Parkinson.', 'p. 412', 'Lezione 07 — slide'],
   ];
-  mc.forEach((m, k) => S.cards.push({ id: uid(), pid: neuro.id, type: 'mc', q: m[0], options: m[1], answer: m[2], why: m[3], src: m[4], box: k === 3 ? 2 : 0, due: now - 1000, seen: k, lapses: 0, created: now }));
+  mc.forEach((m, k) => S.cards.push({ id: uid(), pid: neuro.id, type: 'mc', q: m[0], options: m[1], answer: m[2], why: m[3], deck: m[5], src: `${m[5]} · ${m[4]}`, box: k === 3 ? 2 : 0, due: now - 1000, seen: k, lapses: 0, created: now }));
   const terms = [
     ['to bring about', 'causare, determinare', 'The reform brought about a sharp fall in enrolment.'],
     ['notwithstanding', 'nonostante, malgrado', 'Notwithstanding the delay, the study went ahead.'],
     ['to hedge', 'attenuare, smorzare (un\'affermazione)', 'Reviewers asked the authors to hedge the claim.'],
   ];
-  terms.forEach(t => S.cards.push({ id: uid(), pid: eng.id, type: 'term', front: t[0], back: t[1], example: t[2], src: 'lista accademica', box: 0, due: now - 1000, seen: 0, lapses: 0, created: now }));
+  terms.forEach(t => S.cards.push({ id: uid(), pid: eng.id, type: 'term', front: t[0], back: t[1], example: t[2], deck: 'Lista accademica', src: 'Lista accademica · p. 7', box: 0, due: now - 1000, seen: 0, lapses: 0, created: now }));
   save();
   toast('Dati di esempio caricati');
 }

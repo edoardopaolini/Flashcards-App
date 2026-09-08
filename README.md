@@ -19,12 +19,12 @@ Scheda *Importa* → *Scegli un PDF*. Puoi caricare **più file insieme** — co
 - **Di cosa parlano le domande**: *Tutto il materiale* copre i documenti in modo uniforme; *Un argomento preciso* ti fa scrivere il tema (es. "sistema limbico") e cerca solo quello, ignorando il resto. Se nei PDF quell'argomento non c'è, l'app te lo dice invece di inventare domande.
 - **Quante**: 10, 20, 40 o 100. Con cento schede faccio più passaggi sul testo, quindi ci vuole qualche minuto in più.
 - **Sintesi del PDF**: se la lasci attiva, oltre alle schede scrivo per ogni file un riassunto di due pagine — titoletti brevi e frasi piene — da rileggere prima di studiare.
-- **A quale progetto** aggiungerle, creandone uno nuovo se serve.
+- **A quale progetto** aggiungerle, creandone uno nuovo se serve. Ogni PDF diventa una **fonte** dentro il progetto, così le sue schede restano riconoscibili e studiabili da sole.
 
 Alla fine vedi le **bozze**: le tieni, le scarti o le correggi una per una. Quelle ricavate da punti poco leggibili (scansioni sbiadite) arrivano **segnate in rosso**, così controlli prima di salvarle. Nulla entra in libreria senza il tuo assenso.
 
 **Incollando un JSON** (gratis, nessuna chiave)
-*Importa* → *Ho già un JSON — incollalo*. Il pulsante *Copia il prompt* mette negli appunti il testo da usare in una chat con il PDF allegato: incolli la risposta nel campo e le schede entrano nel progetto scelto. Funziona bene anche da iPhone. Formati riconosciuti:
+*Importa* → *Ho già un JSON — incollalo*. Il pulsante *Copia il prompt* mette negli appunti il testo da usare in una chat con il PDF allegato: incolli la risposta nel campo e le schede entrano nel progetto scelto. C'è un campo **Fonte** dove scrivere da cosa vengono (il nome del PDF, dello studio, della dispensa): è quello che poi compare sopra ogni domanda. Funziona bene anche da iPhone. Formati riconosciuti:
 
 ```json
 [{"q":"domanda","options":["a","b","c","d"],"answer":0,"why":"spiegazione","src":"p. 4"}]
@@ -33,10 +33,19 @@ Alla fine vedi le **bozze**: le tieni, le scarti o le correggi una per una. Quel
 
 Le voci incomplete vengono scartate con un avviso: mai schede salvate a metà.
 
-### 3. Leggere le sintesi
+### 3. Le fonti dentro un progetto
+Un progetto può raccogliere schede da più PDF, e non è la stessa cosa studiarle insieme o separate. Dentro il progetto c'è quindi l'elenco delle **Fonti**, una per PDF, con quante schede contiene e quante sono da rivedere:
+
+- **Tocca una fonte** per studiare solo quella: statistiche, quiz e sessioni di studio si restringono a lei.
+- **Selezionane due o più** e il pulsante *Unisci* le fa diventare una sola fonte, con il nome che scegli — utile quando tre dispense sono in realtà lo stesso argomento. Le schede non si toccano: cambia solo l'etichetta, e si può rinominare di nuovo quando vuoi.
+- **Nessuna selezione** significa tutto il progetto.
+
+Durante il quiz la fonte è scritta sopra la domanda, prima delle risposte: se una domanda chiede "quali risultati trova l'analisi statistica?", vedi subito di quale studio si parla. Le schede più vecchie, importate prima di questa funzione, compaiono sotto *Senza fonte*: selezionale e dai loro un nome con *Rinomina*.
+
+### 4. Leggere le sintesi
 Ogni sintesi resta nel progetto, sotto **Da leggere**: si apre a piena pagina, con una colonna pensata per leggere davvero. Non compare durante quiz e sessioni di studio — lì servirebbe solo a suggerire le risposte. Si può eliminare senza toccare le schede.
 
-### 4. Studiare
+### 5. Studiare
 Dentro un progetto scegli la modalità:
 
 - **Quiz** — la domanda, quattro risposte, esito immediato: verde la giusta, rossa quella che hai toccato, e una riga che spiega perché. La posizione della risposta corretta cambia sempre: viene rimescolata alla creazione della scheda e di nuovo a ogni sessione, così non si impara a memoria "è la prima".
@@ -44,7 +53,7 @@ Dentro un progetto scegli la modalità:
 
 Ogni sessione prende **20 schede** per volta — si cambia in *Impostazioni → Sessioni* (10, 20, 30 o 50) — dando priorità a quelle in scadenza. Alla fine vedi il punteggio e l'elenco degli errori, che tornano subito nel mazzo.
 
-### 5. La ripetizione spaziata
+### 6. La ripetizione spaziata
 Sei livelli: **1 → 3 → 7 → 16 → 35 → 90 giorni**. Risposta giusta, la scheda sale di un livello e torna più avanti nel tempo; risposta sbagliata, torna al livello zero e ricompare dopo dieci minuti. È il meccanismo che fa la differenza tra ripassare e ricordare: non serve decidere cosa studiare, basta aprire l'app.
 
 **Progressi** mostra i giorni di fila, le schede riviste nella settimana (da lunedì a domenica) e la percentuale consolidata per progetto.
