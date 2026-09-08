@@ -187,16 +187,35 @@ textarea.field{resize:vertical;min-height:76px;line-height:1.45}
   transition:opacity .2s,transform .2s}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 .empty{text-align:center;padding:60px 0 0}
+.note{background:var(--card);border:1px solid var(--hair);border-radius:18px;padding:20px 21px}
+.note .nh{font:500 14.5px/1.35 var(--sans);letter-spacing:.005em;color:var(--ink);margin:24px 0 9px}
+.note .nh:first-child{margin-top:0}
+.note .np{font:400 15px/1.68 var(--serif);color:#3A352D;margin:0 0 13px;text-wrap:pretty}
+.note .nl{margin:0 0 13px;padding-left:19px}
+.note .nl li{font:400 15px/1.6 var(--serif);color:#3A352D;margin:0 0 7px;text-wrap:pretty}
+.note>*:last-child{margin-bottom:0}
 .empty .h2{margin-bottom:12px}
 .kb{display:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* ── desktop (Mac): colonna più larga, griglie, scorciatoie visibili ── */
 @media (min-width:900px) and (pointer:fine){
-  .screen{padding-top:44px}
-  .wrap{max-width:1000px;padding:0 32px}
-  .topbar{max-width:1000px;padding:0 32px}
-  .h1{font-size:36px}
+  .screen{padding-top:48px}
+  .wrap{max-width:1120px;padding:0 36px}
+  .topbar{max-width:1120px;padding:0 36px}
+  .h1{font-size:40px}
+  .h2{font-size:19px}
+  .sub{font-size:15.5px;line-height:1.62}
+  .meta{font-size:12.5px}
+  .lbl{font-size:12px}
+  .btn{font-size:16px;padding:18px}
+  .btn-sm{font-size:13px;padding:10px 16px}
+  .field{font-size:16px;padding:15px 17px}
+  .pill{font-size:13.5px;padding:9px 16px}
+  .tag{font-size:11.5px}
+  .stat b{font-size:25px}
+  .stat span{font-size:12px}
+  .due-hero .v{font-size:22px}
 
   /* libreria: due colonne di progetti, hero e filtri a piena larghezza */
   #app.v-library .wrap.col.gap10{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -205,22 +224,22 @@ textarea.field{resize:vertical;min-height:76px;line-height:1.45}
   #app.v-library .empty{max-width:520px;margin:0 auto}
 
   /* progetto: sessioni affiancate */
-  #app.v-project .wrap{max-width:820px}
+  #app.v-project .wrap{max-width:900px}
   #app.v-project .col.gap10{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   #app.v-project .list-row{align-items:flex-start;padding:20px}
 
   /* quiz: domanda larga, risposte in griglia 2×2 */
-  #app.v-quiz .wrap{max-width:760px}
-  #app.v-quiz .q{font-size:31px;line-height:1.24}
+  #app.v-quiz .wrap{max-width:900px}
+  #app.v-quiz .q{font-size:34px;line-height:1.24}
   #app.v-quiz .col.gap10{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   #app.v-quiz .ans{align-items:flex-start;padding:18px}
-  #app.v-quiz .ans .txt{font-size:16.5px}
+  #app.v-quiz .ans .txt{font-size:17.5px}
 
   /* impara: scheda più grande e centrata */
   #app.v-learn .deck{max-width:640px;margin:0 auto;padding-top:30px}
   #app.v-learn .swipecard{min-height:400px;padding:30px;cursor:grab}
   #app.v-learn .swipecard:active{cursor:grabbing}
-  #app.v-learn .swipecard .front{font-size:36px}
+  #app.v-learn .swipecard .front{font-size:39px}
   #app.v-learn .wrap{max-width:640px}
 
   #app.v-results .wrap,#app.v-settings .wrap,#app.v-import .wrap{max-width:720px}
@@ -229,11 +248,17 @@ textarea.field{resize:vertical;min-height:76px;line-height:1.45}
   #app.v-stats .week{height:96px}
 
   /* barra di navigazione: pillola più compatta, staccata dal fondo */
-  .tabs{left:0;right:0;width:340px;bottom:24px}
+  .tabs{left:0;right:0;width:380px;bottom:24px}
   .screen.pad-tabs .scroll{padding-bottom:120px}
 
   /* scorciatoie da tastiera: solo qui hanno senso */
   .kb{display:block;margin:22px 0 0;text-align:center;font:400 11.5px/1 var(--mono);color:var(--mut)}
+
+  /* sintesi: colonna da lettura, non da interfaccia */
+  #app.v-note .wrap{max-width:780px}
+  #app.v-note .note{padding:34px 38px}
+  #app.v-note .note .np,#app.v-note .note .nl li{font-size:17px;line-height:1.72}
+  #app.v-note .note .nh{font-size:16px;margin-top:30px}
 
   .list-row:hover,.proj:hover{border-color:rgba(34,31,26,.24)}
   .ans:hover{border-color:var(--ink)}

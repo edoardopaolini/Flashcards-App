@@ -17,7 +17,8 @@ Scheda *Importa* → *Scegli un PDF*. Puoi caricare **più file insieme** — co
 
 - **Tipo di scheda**: quattro risposte, oppure termine ↔ traduzione per le lingue.
 - **Di cosa parlano le domande**: *Tutto il materiale* copre i documenti in modo uniforme; *Un argomento preciso* ti fa scrivere il tema (es. "sistema limbico") e cerca solo quello, ignorando il resto. Se nei PDF quell'argomento non c'è, l'app te lo dice invece di inventare domande.
-- **Quante**: 10, 20 o 40.
+- **Quante**: 10, 20, 40 o 100. Con cento schede faccio più passaggi sul testo, quindi ci vuole qualche minuto in più.
+- **Sintesi del PDF**: se la lasci attiva, oltre alle schede scrivo per ogni file un riassunto di due pagine — titoletti brevi e frasi piene — da rileggere prima di studiare.
 - **A quale progetto** aggiungerle, creandone uno nuovo se serve.
 
 Alla fine vedi le **bozze**: le tieni, le scarti o le correggi una per una. Quelle ricavate da punti poco leggibili (scansioni sbiadite) arrivano **segnate in rosso**, così controlli prima di salvarle. Nulla entra in libreria senza il tuo assenso.
@@ -32,15 +33,18 @@ Alla fine vedi le **bozze**: le tieni, le scarti o le correggi una per una. Quel
 
 Le voci incomplete vengono scartate con un avviso: mai schede salvate a metà.
 
-### 3. Studiare
+### 3. Leggere le sintesi
+Ogni sintesi resta nel progetto, sotto **Da leggere**: si apre a piena pagina, con una colonna pensata per leggere davvero. Non compare durante quiz e sessioni di studio — lì servirebbe solo a suggerire le risposte. Si può eliminare senza toccare le schede.
+
+### 4. Studiare
 Dentro un progetto scegli la modalità:
 
-- **Quiz** — la domanda, quattro risposte, esito immediato: verde la giusta, rossa quella che hai toccato, e una riga che spiega perché. Poi si passa avanti.
+- **Quiz** — la domanda, quattro risposte, esito immediato: verde la giusta, rossa quella che hai toccato, e una riga che spiega perché. La posizione della risposta corretta cambia sempre: viene rimescolata alla creazione della scheda e di nuovo a ogni sessione, così non si impara a memoria "è la prima".
 - **Impara** — una scheda per volta: la tocchi per girarla, poi la spingi a destra ("Lo so") o a sinistra ("Ancora"). Si trascina col dito, come un mazzo.
 
-Ogni sessione prende al massimo 12 schede, dando priorità a quelle in scadenza. Alla fine vedi il punteggio e l'elenco degli errori, che tornano subito nel mazzo.
+Ogni sessione prende **20 schede** per volta — si cambia in *Impostazioni → Sessioni* (10, 20, 30 o 50) — dando priorità a quelle in scadenza. Alla fine vedi il punteggio e l'elenco degli errori, che tornano subito nel mazzo.
 
-### 4. La ripetizione spaziata
+### 5. La ripetizione spaziata
 Sei livelli: **1 → 3 → 7 → 16 → 35 → 90 giorni**. Risposta giusta, la scheda sale di un livello e torna più avanti nel tempo; risposta sbagliata, torna al livello zero e ricompare dopo dieci minuti. È il meccanismo che fa la differenza tra ripassare e ricordare: non serve decidere cosa studiare, basta aprire l'app.
 
 **Progressi** mostra i giorni di fila, le schede riviste nella settimana (da lunedì a domenica) e la percentuale consolidata per progetto.
@@ -70,7 +74,7 @@ Senza chiave l'app funziona comunque: studio, backup, progressi e la strada *Inc
 ## Limiti dichiarati
 
 - **Scansioni e scrittura a mano**: pdf.js estrae solo testo vero. Se il PDF è un'immagine l'app lo dice e si ferma — servirebbe OCR.
-- **Massimo 10 PDF per import e 12 chiamate al modello**, per non far esplodere i costi.
+- **Massimo 10 PDF per import, 12 chiamate al modello, 4 sintesi per volta**, per non far esplodere i costi. Le domande doppie vengono scartate da sole.
 - Le domande generate vanno lette: un modello può sbagliare sfumature. Per questo il passaggio di revisione non è saltabile.
 
 ---
