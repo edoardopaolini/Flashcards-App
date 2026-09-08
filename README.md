@@ -13,12 +13,14 @@ La **Libreria** contiene i progetti — "Neuroanatomia", "Inglese accademico". O
 Due strade, si possono usare entrambe.
 
 **Dai PDF, dentro l'app** (serve la chiave API in *Impostazioni*)
-Scheda *Importa* → *Scegli un PDF*. Puoi caricare **più file insieme** — comodo quando un esame sta su tre dispense: la fonte scritta su ogni scheda ricorda da quale file e da quale pagina viene. Poi scegli:
+Scheda *Importa* → *Scegli un PDF*. Puoi caricare **più file insieme** — comodo quando un esame sta su tre dispense: la fonte scritta su ogni scheda ricorda da quale file e da quale pagina viene.
+
+Nell'elenco dei PDF caricati puoi **selezionarne due o più e unirli in una fonte sola**, dandole il nome che vuoi: serve quando due dispense trattano esattamente lo stesso argomento e non ha senso tenerle separate. Un file unito si può sempre staccare con *Rendilo fonte a sé*. Poi scegli:
 
 - **Tipo di scheda**: quattro risposte, oppure termine ↔ traduzione per le lingue.
 - **Di cosa parlano le domande**: *Tutto il materiale* copre i documenti in modo uniforme; *Un argomento preciso* ti fa scrivere il tema (es. "sistema limbico") e cerca solo quello, ignorando il resto. Se nei PDF quell'argomento non c'è, l'app te lo dice invece di inventare domande.
-- **Quante**: 10, 20, 40 o 100. Con cento schede faccio più passaggi sul testo, quindi ci vuole qualche minuto in più.
-- **Sintesi del PDF**: se la lasci attiva, oltre alle schede scrivo per ogni file un riassunto di due pagine — titoletti brevi e frasi piene — da rileggere prima di studiare.
+- **Quante schede, fonte per fonte**: 10, 20, 40 o 100 per *ciascuna* fonte, non in totale — tre fonti da 40 fanno 120 schede, e il pulsante finale dice sempre il totale. Così un capitolo denso può valere 100 schede mentre le slide di ripasso ne valgono 10.
+- **Sintesi**: se la lasci attiva, oltre alle schede scrivo **una sintesi per fonte** — due pagine, titoletti brevi e frasi piene — da rileggere prima di studiare. Due PDF uniti danno una sintesi sola.
 - **A quale progetto** aggiungerle, creandone uno nuovo se serve. Ogni PDF diventa una **fonte** dentro il progetto, così le sue schede restano riconoscibili e studiabili da sole.
 
 Alla fine vedi le **bozze**: le tieni, le scarti o le correggi una per una. Quelle ricavate da punti poco leggibili (scansioni sbiadite) arrivano **segnate in rosso**, così controlli prima di salvarle. Nulla entra in libreria senza il tuo assenso.
@@ -63,6 +65,7 @@ Sei livelli: **1 → 3 → 7 → 16 → 35 → 90 giorni**. Risposta giusta, la 
 ## Dove finiscono i dati
 
 - **I PDF non vengono caricati da nessuna parte.** Il testo è estratto nel browser con pdf.js; al modello va solo il testo, mai il file.
+- **Non ci sono dati di esempio**: la libreria parte vuota e si riempie solo con il tuo materiale.
 - **Le schede stanno nella memoria locale del browser.** Restano tra le sessioni e funzionano offline, ma spariscono se cancelli i dati del sito o disinstalli l'icona.
 - **Fai backup.** *Impostazioni → Esporta backup* salva un file JSON (tienilo su iCloud Drive); *Importa backup* lo rimette a posto, anche su un altro dispositivo.
 - **Nessuna sincronizzazione.** iPhone e Mac hanno librerie separate: si spostano con l'export. Anche browser diversi sullo stesso computer hanno dati separati.
@@ -83,7 +86,7 @@ Senza chiave l'app funziona comunque: studio, backup, progressi e la strada *Inc
 ## Limiti dichiarati
 
 - **Scansioni e scrittura a mano**: pdf.js estrae solo testo vero. Se il PDF è un'immagine l'app lo dice e si ferma — servirebbe OCR.
-- **Massimo 10 PDF per import, 12 chiamate al modello, 4 sintesi per volta**, per non far esplodere i costi. Le domande doppie vengono scartate da sole.
+- **Massimo 10 PDF per import, 8 chiamate al modello per fonte e 24 in tutto, 4 sintesi per volta**, per non far esplodere i costi. Le domande doppie vengono scartate da sole.
 - Le domande generate vanno lette: un modello può sbagliare sfumature. Per questo il passaggio di revisione non è saltabile.
 
 ---

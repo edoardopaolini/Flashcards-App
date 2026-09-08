@@ -214,10 +214,9 @@ function vLibrary() {
     </div>
     ${empty ? `<div class="wrap empty">
         <div class="h2">Ancora nulla qui</div>
-        <p class="sub">Carica un PDF e ne ricavo domande a quattro risposte. Oppure parti dai dati di esempio per vedere come funziona.</p>
+        <p class="sub">Carica un PDF e ne ricavo domande a quattro risposte, oppure incolla un JSON già pronto.</p>
         <div class="col gap10 mt24">
           <button class="btn terra" data-act="nav" data-arg="import">Importa un PDF</button>
-          <button class="btn ghost" data-act="seed">Carica dati di esempio</button>
         </div>
       </div>`
       : `<div class="wrap mt24">${due
@@ -475,21 +474,34 @@ function vImport() {
         <h1 class="h1 mt18">${I.files.length === 1 ? esc(I.files[0].short) : I.files.length + ' PDF insieme'}</h1>
         <p class="sub mt10">${I.n} ${I.n === 1 ? 'pagina' : 'pagine'} · ${(I.chars / 1000).toFixed(1)}k caratteri di testo estratto</p>
       </div>
-      <div class="wrap mt18"><div class="list">
-        ${I.files.map((file, i) => `<div class="list-row">
-          <span class="tile" style="width:34px;height:38px">${ICON.book}</span>
-          <span style="flex:1;min-width:0">
-            <span style="font:400 14.5px/1.3 var(--sans);display:block">${esc(file.name)}</span>
-            <span class="meta" style="display:block;margin-top:5px">${file.n} ${file.n === 1 ? 'pagina' : 'pagine'} · ${(file.chars / 1000).toFixed(1)}k caratteri</span>
-          </span>
-          ${I.files.length > 1 ? `<button class="btn-sm" data-act="rmfile" data-arg="${i}">Togli</button>` : ''}
-        </div>`).join('')}
+      ${(() => {
+        const selF = I.selF || [], srcs = importSources(I.files);
+        return `<div class="wrap mt18">
+        ${I.files.length > 1 ? '<p class="meta" style="margin:0 0 10px">Seleziona due o più PDF e uniscili in una fonte sola, se trattano lo stesso argomento.</p>' : ''}
+        <div class="list">
+        ${I.files.map((file, i) => {
+          const on = selF.includes(i), grouped = (file.deck || file.short) !== file.short;
+          return `<div class="list-row">
+            ${I.files.length > 1
+              ? `<button data-act="selfile" data-arg="${i}" style="width:22px;height:22px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;font:500 11px/1 var(--sans);${on ? 'background:var(--ink);color:var(--card)' : 'border:1.5px solid rgba(34,31,26,.22)'}">${on ? '&#10003;' : ''}</button>`
+              : `<span class="tile" style="width:34px;height:38px">${ICON.book}</span>`}
+            <span style="flex:1;min-width:0">
+              <span style="font:400 14.5px/1.3 var(--sans);display:block">${esc(file.name)}</span>
+              <span class="meta" style="display:block;margin-top:5px">${file.n} ${file.n === 1 ? 'pagina' : 'pagine'} · ${(file.chars / 1000).toFixed(1)}k caratteri${grouped ? ' · fonte: ' + esc(file.deck) : ''}</span>
+            </span>
+            ${I.files.length > 1 ? `<button class="btn-sm" data-act="rmfile" data-arg="${i}">Togli</button>` : ''}
+          </div>`;
+        }).join('')}
         <label class="list-row" style="color:var(--terra)">
           <input type="file" accept="application/pdf" id="pdfin" class="hide" multiple>
           <span style="width:34px;text-align:center;font-size:19px">+</span>
           <span style="flex:1;font:500 14px/1 var(--sans)">Aggiungi un altro PDF</span>
         </label>
-      </div></div>
+        </div>
+        ${selF.length > 1 ? `<button class="btn-sm mt10" data-act="mergefiles">Unisci i ${selF.length} selezionati in una fonte</button>` : ''}
+        ${selF.length === 1 && srcs.length < I.files.length ? `<button class="btn-sm mt10" data-act="splitfile" data-arg="${selF[0]}">Rendilo fonte a sé</button>` : ''}
+      </div>`;
+      })()}
       <div class="wrap mt24"><div class="card">
         <div class="meta">Tipo di scheda</div>
         <div class="row gap8 mt10">
@@ -506,19 +518,38 @@ function vImport() {
                <p class="meta mt10">Cerco solo questo nei PDF caricati. Se non lo trovo te lo dico, invece di inventare.</p>`
             : `<p class="meta mt10">Copro i documenti in modo uniforme, dando peso a ciò che chiederebbe un esame.</p>`}
         </div>
-        <div class="between mt18"><div class="meta">Quante</div>
-          <div class="row gap8">${[10, 20, 40, 100].map(n => `<button class="btn-sm ${I.count === n ? 'on' : ''}" data-act="setcount" data-arg="${n}">${n}</button>`).join('')}</div>
-        </div>
-        ${I.count >= 100 ? '<p class="meta mt10">Cento schede vogliono più passaggi sul testo: la generazione dura qualche minuto e costa di più.</p>' : ''}
-        <div class="between mt18"><div class="meta">Sintesi del PDF</div>
+        ${(() => {
+          const srcs = importSources(I.files);
+          const multi = srcs.length > 1;
+          const rows = srcs.map((g, i) => `<div class="${multi ? 'mt14' : ''}">
+            ${multi ? `<div class="meta" style="margin-bottom:9px">${esc(g.deck)}${g.files.length > 1 ? ` · ${g.files.length} PDF uniti` : ''}</div>` : ''}
+            <div class="row gap8">${[10, 20, 40, 100].map(k => `<button class="btn-sm ${perOf(g.deck) === k ? 'on' : ''}" data-act="setper" data-arg="${i}:${k}" style="flex:1">${k}</button>`).join('')}</div>
+          </div>`).join('');
+          const tot = srcs.reduce((s, g) => s + perOf(g.deck), 0);
+          const note = multi
+            ? 'Il numero vale per ciascuna fonte, non in totale.'
+            : (srcs[0] && perOf(srcs[0].deck) >= 100 ? 'Cento schede vogliono più passaggi sul testo: la generazione dura qualche minuto e costa di più.' : '');
+          return `<div class="mt18">
+            <div class="between"><div class="meta">Quante schede${multi ? ' per fonte' : ''}</div>${multi ? `<div class="meta">${tot} in tutto</div>` : ''}</div>
+            ${rows}
+            ${note ? `<p class="meta mt10">${note}</p>` : ''}
+          </div>`;
+        })()}
+        <div class="between mt18"><div class="meta">Sintesi</div>
           <div class="row gap8">
             <button class="btn-sm ${I.summary === false ? '' : 'on'}" data-act="setsummary" data-arg="1">Sì</button>
             <button class="btn-sm ${I.summary === false ? 'on' : ''}" data-act="setsummary" data-arg="0">No</button>
           </div>
         </div>
-        <p class="meta mt10">${I.summary === false
-          ? 'Solo schede.'
-          : 'Oltre alle schede scrivo un riassunto di due pagine per ogni PDF, da rileggere prima di studiare. Resta nel progetto, fuori dalle sessioni.'}</p>
+        ${(() => {
+          if (I.summary === false) return '<p class="meta mt10">Solo schede.</p>';
+          const k = importSources(I.files).length;
+          const base = k > 1
+            ? 'Oltre alle schede scrivo un riassunto di due pagine per ogni fonte: due PDF uniti danno una sintesi sola. Resta nel progetto, fuori dalle sessioni.'
+            : 'Oltre alle schede scrivo un riassunto di due pagine, da rileggere prima di studiare. Resta nel progetto, fuori dalle sessioni.';
+          const cap = k > 4 ? ` Con ${k} fonti ne scrivo solo le prime 4 — le altre restano senza sintesi.` : '';
+          return `<p class="meta mt10">${base}${cap}</p>`;
+        })()}
         <div class="mt18"><div class="meta">Aggiungi al progetto</div>
           <select class="field mt10" id="pidsel">
             ${S.projects.map(p => `<option value="${esc(p.id)}" ${I.pid === p.id ? 'selected' : ''}>${esc(p.title)}</option>`).join('')}
@@ -528,7 +559,11 @@ function vImport() {
             <input class="field mt10" id="newtags" placeholder="Argomenti, separati da virgola" value="${esc(I.newTags || '')}">` : ''}
         </div>
       </div>
-      <button class="btn terra mt18" data-act="generate">Genera ${I.count} ${I.type === 'mc' ? 'domande' : 'termini'}</button>
+      ${(() => {
+        const srcs = importSources(I.files);
+        const tot = srcs.reduce((s, g) => s + perOf(g.deck), 0);
+        return `<button class="btn terra mt18" data-act="generate">Genera ${tot} ${I.type === 'mc' ? 'domande' : 'termini'}${srcs.length > 1 ? ` da ${srcs.length} fonti` : ''}</button>`;
+      })()}
       ${I.err ? `<div class="err mt18">${esc(I.err)}</div>` : ''}
       </div>`,
     paste: () => `
@@ -598,7 +633,7 @@ function vImport() {
       ${I.drafts.some(d => d.deck) ? `<div class="wrap mt18"><p class="meta">Fonte: ${esc([...new Set(I.drafts.map(d => d.deck).filter(Boolean))].join(' · '))}</p></div>` : ''}
       ${(I.notes || []).length ? `<div class="wrap mt24"><div class="card">
         <div class="lbl">Sintesi pronta</div>
-        <p class="sub" style="margin:9px 0 0">${I.notes.map(x => esc(x.file)).join(' · ')} — la salvo col resto e la trovi nel progetto, da leggere fuori dalle sessioni.</p>
+        <p class="sub" style="margin:9px 0 0">${I.notes.map(x => esc(x.file)).join(' · ')} — ${I.notes.length > 1 ? 'una per fonte' : 'una'}, la salvo col resto e la trovi nel progetto, da leggere fuori dalle sessioni.</p>
       </div></div>` : ''}
       <div class="wrap mt24"><button class="btn" data-act="savedrafts">Salva ${I.drafts.filter(d => d.keep !== false).length} ${(I.drafts.filter(d => d.keep !== false).length === 1 ? 'scheda' : 'schede')} in ${esc((proj(I.pid) || { title: 'nuovo progetto' }).title)}</button>
       <button class="btn ghost mt10" data-act="cancelimport">Butta tutto</button></div>`,
@@ -723,6 +758,20 @@ async function readPdf(file) {
   return { pages, n: doc.numPages };
 }
 
+/* I PDF caricati, raggruppati per fonte: due file con la stessa etichetta contano come uno. */
+function importSources(files) {
+  const out = [];
+  (files || []).forEach((file, i) => {
+    const d = file.deck || file.short;
+    let g = out.find(x => x.deck === d);
+    if (!g) { g = { deck: d, files: [], idx: [] }; out.push(g); }
+    g.files.push(file); g.idx.push(i);
+  });
+  return out;
+}
+/* Quante schede vuole questa fonte: la scelta è per fonte, non per import. */
+const perOf = (deck) => clamp(num((I.per || {})[deck], I.count || 20), 5, 100);
+
 /* Un blocco per chiamata: mai più di ~12k caratteri, e i blocchi non attraversano due PDF
    (così la fonte scritta sulla scheda resta vera). */
 function buildChunks(files, size = 12000) {
@@ -828,34 +877,52 @@ function ensureProject() {
 
 async function generate() {
   if (!S.apiKey) { I.err = 'Prima inserisci la chiave API in Impostazioni.'; I.step = 'config'; return render(); }
-  const MAX_CALLS = 12, PER_CALL = 25;               // tetto ai costi e alla lunghezza di ogni risposta
-  const chunks = buildChunks(I.files);
-  const calls = Math.min(MAX_CALLS, Math.max(chunks.length, Math.ceil(I.count / PER_CALL)));
-  const per = clamp(Math.ceil(I.count / calls), 3, PER_CALL);
+  const PER_CALL = 25, CALLS_PER_SOURCE = 8, CALLS_TOTAL = 24;  // tetto ai costi e alla lunghezza di ogni risposta
   const wantNote = I.summary !== false;
+  const srcs = importSources(I.files);
+  // preventivo: ogni fonte ha il suo obiettivo di schede e le sue chiamate
+  let budget = CALLS_TOTAL;
+  const plan = srcs.map(g => {
+    const count = perOf(g.deck), chunks = buildChunks(g.files);
+    const calls = Math.max(1, Math.min(CALLS_PER_SOURCE, budget, Math.max(chunks.length, Math.ceil(count / PER_CALL))));
+    budget -= calls;
+    return { g, count, chunks, calls };
+  });
+  const steps = plan.reduce((s, p) => s + p.calls, 0) + (wantNote ? Math.min(srcs.length, 4) : 0);
   const me = I; me.ctrl = new AbortController();
   I.step = 'generating'; I.prog = 3; I.stage = 'Leggo il materiale'; I.notes = []; render();
-  const drafts = [], seen = new Set(), asked = {};
-  for (let k = 0; k < calls && drafts.length < I.count; k++) {
-    const ci = k % chunks.length, c = chunks[ci];
-    I.stage = calls > 1 ? `Scrivo le domande · ${k + 1} di ${calls}` : 'Scrivo le domande';
-    I.prog = Math.round(6 + (k / calls) * (wantNote ? 84 : 92)); render();
-    try {
-      const want = Math.min(per, I.count - drafts.length);
-      const out = await callModel(buildPrompt(c.text, want, I.type, srcLabel(c), I.focus, (asked[ci] || []).slice(-14)), me.ctrl.signal);
-      if (I !== me) return;                          // annullato nel frattempo
-      toDrafts(parseJson(out), I.type, srcLabel(c), c.file).forEach(d => {
-        const head = d.type === 'term' ? d.front : d.q;
-        const key = head.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
-        if (!key || seen.has(key) || drafts.length >= I.count) return;
-        seen.add(key); drafts.push(d);
-        (asked[ci] = asked[ci] || []).push(head);
-      });
-    } catch (e) {
-      if (I !== me || e.name === 'AbortError') return;
-      I.err = e.name === 'SyntaxError' ? 'La risposta del modello non era JSON leggibile. Riprova.' : e.message;
-      I.step = 'config'; return render();
+  const drafts = [];
+  let step = 0, failed = null;
+
+  for (const p of plan) {
+    const seen = new Set(), asked = {};
+    let made = 0;
+    for (let k = 0; k < p.calls && made < p.count; k++) {
+      const ci = k % p.chunks.length, c = p.chunks[ci];
+      step++;
+      I.stage = srcs.length > 1 ? `${p.g.deck} · domande ${k + 1} di ${p.calls}` : `Scrivo le domande · ${k + 1} di ${p.calls}`;
+      I.prog = Math.round(5 + (step / steps) * 92); render();
+      try {
+        const want = Math.min(PER_CALL, p.count - made);
+        const out = await callModel(buildPrompt(c.text, want, I.type, srcLabel(c), I.focus, (asked[ci] || []).slice(-14)), me.ctrl.signal);
+        if (I !== me) return;                        // annullato nel frattempo
+        toDrafts(parseJson(out), I.type, srcLabel(c), p.g.deck).forEach(d => {
+          const head = d.type === 'term' ? d.front : d.q;
+          const key = head.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+          if (!key || seen.has(key) || made >= p.count) return;
+          seen.add(key); drafts.push(d); made++;
+          (asked[ci] = asked[ci] || []).push(head);
+        });
+      } catch (e) {
+        if (I !== me || e.name === 'AbortError') return;
+        failed = e;                                  // una fonte può fallire senza fermare le altre
+      }
     }
+    if (srcs.length > 1 && !made) toast(`Nessuna scheda da "${p.g.deck}"`);
+  }
+  if (!drafts.length && failed) {
+    I.err = failed.name === 'SyntaxError' ? 'La risposta del modello non era JSON leggibile. Riprova.' : failed.message;
+    I.step = 'config'; return render();
   }
   if (!drafts.length) {
     I.err = I.focus
@@ -864,14 +931,19 @@ async function generate() {
     I.step = 'config'; return render();
   }
   if (wantNote) {
-    const files = I.files.slice(0, 4);
-    for (let k = 0; k < files.length; k++) {
-      I.stage = files.length > 1 ? `Scrivo la sintesi · ${k + 1} di ${files.length}` : 'Scrivo la sintesi del PDF';
-      I.prog = 90 + Math.round((k / files.length) * 8); render();
+    const list = srcs.slice(0, 4);
+    if (srcs.length > list.length) toast(`Sintesi scritte per le prime ${list.length} fonti su ${srcs.length}`);
+    for (let k = 0; k < list.length; k++) {
+      const g = list[k];
+      step++;
+      I.stage = list.length > 1 ? `${g.deck} · sintesi` : 'Scrivo la sintesi del PDF';
+      I.prog = Math.min(98, Math.round(5 + (step / steps) * 92)); render();
       try {
-        const txt = await callModel(summaryPrompt(files[k], I.focus), me.ctrl.signal);
+        // fonte unica = una sintesi sola, anche se dietro ci sono due PDF
+        const merged = { pages: g.files.reduce((a, x) => a.concat(x.pages), []) };
+        const txt = await callModel(summaryPrompt(merged, I.focus), me.ctrl.signal);
         if (I !== me) return;
-        if (txt.trim()) I.notes.push({ file: files[k].short, text: txt.trim().slice(0, 20000) });
+        if (txt.trim()) I.notes.push({ file: g.deck, text: txt.trim().slice(0, 20000) });
       } catch (e) {
         if (I !== me || e.name === 'AbortError') return;
         toast('Sintesi non riuscita — le schede però ci sono');
@@ -944,7 +1016,6 @@ const acts = {
     S.notes = (S.notes || []).filter(x => x.pid !== a);
     save(); V = { name: 'library' }; render();
   },
-  seed: () => { seed(); render(); },
   seldeck: (a) => {
     if (!a) { V.sel = []; return render(); }
     const d = deckVal(a), cur = V.sel || [];
@@ -981,6 +1052,38 @@ const acts = {
     save(); V = { name: 'project', pid: nt ? nt.pid : null }; render();
   },
   setcount: (a) => { I.count = Number(a); render(); },
+  setper: (a) => {
+    const [i, k] = String(a).split(':');
+    const g = importSources(I.files)[Number(i)];
+    if (!g) return;
+    I.per = I.per || {}; I.per[g.deck] = clamp(Number(k), 5, 100);
+    render();
+  },
+  selfile: (a) => {
+    const i = Number(a), cur = I.selF || [];
+    I.selF = cur.includes(i) ? cur.filter(x => x !== i) : cur.concat([i]);
+    render();
+  },
+  mergefiles: () => {
+    const sel = (I.selF || []).slice().sort((a, b) => a - b);
+    if (sel.length < 2) return;
+    const first = I.files[sel[0]];
+    const nu = ask('Nome della fonte unica', 'es. Statistica — dispense 1 e 2', first.deck || first.short);
+    if (nu === null) return;
+    const name = nu.trim().slice(0, 80) || first.short;
+    const olds = sel.map(i => I.files[i].deck || I.files[i].short);
+    const want = Math.max(...olds.map(d => perOf(d)));
+    sel.forEach(i => { I.files[i].deck = name; });
+    I.per = I.per || {};
+    olds.forEach(d => { if (d !== name) delete I.per[d]; });
+    I.per[name] = want;                              // la fonte unita parte dal numero più alto fra quelle unite
+    I.selF = []; render();
+  },
+  splitfile: (a) => {
+    const i = Number(a);
+    if (I.files[i]) delete I.files[i].deck;
+    I.selF = []; render();
+  },
   cancelimport: () => { if (I && I.ctrl) I.ctrl.abort(); I = null; V = { name: 'import' }; render(); },
   generate: () => {
     I.err = null;
@@ -997,6 +1100,7 @@ const acts = {
   },
   rmfile: (a) => {
     I.files.splice(Number(a), 1);
+    I.selF = [];
     if (!I.files.length) { I.step = 'pick'; return render(); }
     I.n = I.files.reduce((s, x) => s + x.n, 0);
     I.chars = I.files.reduce((s, x) => s + x.chars, 0);
@@ -1110,29 +1214,6 @@ function bindSwipe() {
   };
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', end);
-}
-
-/* ── esempio ───────────────────────────────────────── */
-function seed() {
-  const now = Date.now();
-  const neuro = { id: uid(), title: 'Neuroanatomia', tags: ['Laurea in Biologia', 'Esami · gennaio'], color: COLORS[0], type: 'mc', created: now };
-  const eng = { id: uid(), title: 'Inglese accademico', tags: ['Lingue nuove'], color: COLORS[1], type: 'term', created: now };
-  S.projects.push(neuro, eng);
-  const mc = [
-    ['Quale struttura smista quasi tutti gli input sensoriali verso la corteccia?', ['Talamo', 'Ipotalamo', 'Ponte', 'Cervelletto'], 0, 'Ogni modalità sensoriale tranne l\'olfatto fa sinapsi in un nucleo talamico prima di arrivare alla corteccia.', 'p. 341', 'Kandel — cap. 12'],
-    ['La barriera emato-encefalica è mantenuta soprattutto da…', ['Giunzioni serrate endoteliali e piedi astrocitari', 'Guaine degli oligodendrociti', 'Processi della microglia', 'Ciglia ependimali'], 0, 'Sono le tight junction fra cellule endoteliali a sigillare il vaso; gli astrociti le inducono e le mantengono.', 'p. 88', 'Kandel — cap. 12'],
-    ['Una lesione dell\'area di Broca produce tipicamente…', ['Eloquio fluente con comprensione scarsa', 'Eloquio non fluente e faticoso', 'Perdita del riconoscimento del parlato', 'Sola incapacità di leggere ad alta voce'], 1, 'L\'afasia di Broca è espressiva: la produzione è stentata e agrammatica, la comprensione resta in gran parte intatta.', 'p. 502', 'Lezione 07 — slide'],
-    ['La substantia nigra proietta principalmente allo…', ['Nucleo rosso', 'Oliva inferiore', 'Striato', 'Genicolato laterale'], 2, 'La via nigrostriatale è dopaminergica: la sua perdita produce i segni motori della malattia di Parkinson.', 'p. 412', 'Lezione 07 — slide'],
-  ];
-  mc.forEach((m, k) => S.cards.push({ id: uid(), pid: neuro.id, type: 'mc', q: m[0], options: m[1], answer: m[2], why: m[3], deck: m[5], src: `${m[5]} · ${m[4]}`, box: k === 3 ? 2 : 0, due: now - 1000, seen: k, lapses: 0, created: now }));
-  const terms = [
-    ['to bring about', 'causare, determinare', 'The reform brought about a sharp fall in enrolment.'],
-    ['notwithstanding', 'nonostante, malgrado', 'Notwithstanding the delay, the study went ahead.'],
-    ['to hedge', 'attenuare, smorzare (un\'affermazione)', 'Reviewers asked the authors to hedge the claim.'],
-  ];
-  terms.forEach(t => S.cards.push({ id: uid(), pid: eng.id, type: 'term', front: t[0], back: t[1], example: t[2], deck: 'Lista accademica', src: 'Lista accademica · p. 7', box: 0, due: now - 1000, seen: 0, lapses: 0, created: now }));
-  save();
-  toast('Dati di esempio caricati');
 }
 
 /* ── eventi ────────────────────────────────────────── */
