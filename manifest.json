@@ -1,6 +1,6 @@
 {
-  "name": "Schede — flashcard da PDF",
-  "short_name": "Schede",
+  "name": "Flashcard App",
+  "short_name": "Flashcard App",
   "description": "Trasforma un PDF in domande a scelta multipla. I dati restano sul dispositivo.",
   "start_url": "./",
   "scope": "./",

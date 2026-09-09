@@ -1,4 +1,4 @@
-# Schede
+# Flashcard App
 
 Un'app per studiare da PDF. Carichi le dispense, ne escono domande a quattro risposte (o coppie termine ↔ traduzione), e l'app decide ogni giorno cosa ti conviene rivedere. Funziona nel browser, anche offline, e i dati restano sul tuo dispositivo: nessun account, nessun server.
 
